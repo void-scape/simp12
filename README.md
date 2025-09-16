@@ -3,4 +3,5 @@
 ## Members
 
 - Nic Ball
+- James Stringham
 
