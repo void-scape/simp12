@@ -1,0 +1,28 @@
+// Multiply 2 integers, optimized memory access.
+//
+// Two integers are stored in 0xFE and OxFD.
+// The assembly code multiplies the two.
+// The result is stored in 0xFF.
+//
+// Author: Pierre Bouckson, Computer Architecture Section 001
+
+START:
+    LOAD E2     
+    SUB E2       // Create 0
+    STORE FF     // result <- 0
+
+LOOP:
+    LOAD FE      // A = multiplier
+    JZ DONE      // if multiplier==0, its over
+    
+    LOAD FF      // A = result
+    ADD FD       // A += multiplicand
+    STORE FF     // result <- A
+    
+    LOAD FE      // A = multiplier
+    SUB E2       // A = multiplier - 1
+    STORE FE     // multiplier <- multiplier - 1
+    JMP LOOP
+
+DONE:
+    HALT

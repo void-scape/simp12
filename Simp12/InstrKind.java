@@ -6,6 +6,8 @@ public enum InstrKind {
     JZ,
     LOAD,
     STORE,
+    LOADI,
+    STOREI,
     AND,
     OR,
     ADD,
