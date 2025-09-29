@@ -105,7 +105,9 @@ public class S12_IL {
      * @return String array of register values
      */
     public String[] getProcessorState() {
-        return new String[]{""};
+        String pcHex  = String.format("0x%02X", PC & 0xFF);
+        String accHex = String.format("0x%03X", ACC & 0x0FFF);
+        return new String[]{pcHex, accHex};
     }
 
     public String getMemState() {
