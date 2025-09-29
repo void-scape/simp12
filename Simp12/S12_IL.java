@@ -1,4 +1,5 @@
 package Simp12;
+
 /**
  * Instruction level simulator for S12
  * ISA
@@ -7,20 +8,16 @@ package Simp12;
  * @date Fall 2025
  */
 
-
 import java.io.*;
 
 public class S12_IL {
-    byte PC;
-    short ACC;
-    String memOutFilename;
-    String traceFilename;
-    short[] mem;
+    public byte PC;
+    public short ACC;
+    public short[] mem;
     int memSize = 256;
 
     String instrTrace;
-    boolean isHalted;
-
+    public boolean isHalted;
 
     public S12_IL(String baseName, short accumulator, byte programCounter) {
         ACC = accumulator;
@@ -31,8 +28,6 @@ public class S12_IL {
         for (int i = 0; i < memSize; i++) {
             mem[i] = 0;
         }
-        memOutFilename = baseName + "_memOut";
-        traceFilename = baseName + "_trace";
     }
 
     public S12_IL() {
@@ -43,14 +38,14 @@ public class S12_IL {
         new S12_IL("basefile", accumulator, programCounter);
     }
 
-    public boolean intializeMem(String filename) {
+    public boolean intializeMem(String fileStr) {
         // Assuming file already read and in format
         // First line is PC, ACC
         // Keep reading lines for all mem spaces.
-        String[] memArrStr = filename.split("\n");
-        if (memArrStr.length != memSize) {
-            System.out.println("NOTE: Memory Array is not " + memSize + " lines! Last mem address: " + memArrStr.length +
-                    ". All other memory addresses will be set to zero!");
+        String[] memArrStr = fileStr.split("\n");
+        if (memArrStr.length > 256) {
+            System.out.println("initializeMem ERR! too many instructions: " + memSize);
+            return false;
         }
         String[] memStr;
         byte memAddr;
@@ -58,30 +53,32 @@ public class S12_IL {
 
         for (int i = 0; i < memArrStr.length; i++) {
             memStr = memArrStr[i].split(" ");
-            if (memStr.length != 2) { //Each line should only contain address and value
+            if (memStr.length != 2) { // Each line should only contain address and value
                 System.err.println("initializeMem ERR! line" + i + "contains more than 2 numbers");
                 return false;
             }
-            if (memStr[0].length() != 2) { //00 to FF, so string should not be more than 2 characters!
-                System.err.println("initializeMem ERR! line" + i + "memory address contains invalid address: " + memStr[0] +
-                        ". Please change to valid value (00..FF)");
+            if (memStr[0].length() != 2) { // 00 to FF, so string should not be more than 2 characters!
+                System.err.println(
+                        "initializeMem ERR! line" + i + "memory address contains invalid address: " + memStr[0] +
+                                ". Please change to valid value (00..FF)");
                 return false;
             }
-            if (memStr[1].length() != 12) { //12-bit binary value.
+            if (memStr[1].length() != 12) { // 12-bit binary value.
                 System.err.println("initializeMem ERR! line" + i + "memory value is not 12-bits!: " + memStr[1] +
                         ". Please change to valid 12-bit binary value");
                 return false;
             }
             try {
-                memAddr = Byte.parseByte(memStr[0], 16); //First number is hex string
-                memVal = Short.parseShort(memStr[1], 2); //Second number is binary
+                memAddr = Byte.parseByte(memStr[0], 16); // First number is hex string
+                memVal = Short.parseShort(memStr[1], 2); // Second number is binary
             } catch (NumberFormatException e) {
-                System.err.println("initializeMem ERR! String is not in proper format. Memory address should be 2 hex values." +
-                        " Memory value should be 12-bit binary value: " + e.getMessage());
+                System.err.println(
+                        "initializeMem ERR! String is not in proper format. Memory address should be 2 hex values." +
+                                " Memory value should be 12-bit binary value: " + e.getMessage());
                 return false;
             }
 
-            if (memAddr != i) { //Make sure that the memory address is the expected address
+            if (memAddr != i) { // Make sure that the memory address is the expected address
                 System.err.println("initializeMem ERR! memory address is not in order. Expecting" + i + ". Got " +
                         memAddr + ".");
                 return false;
@@ -105,9 +102,9 @@ public class S12_IL {
      * @return String array of register values
      */
     public String[] getProcessorState() {
-        String pcHex  = String.format("0x%02X", PC & 0xFF);
+        String pcHex = String.format("0x%02X", PC & 0xFF);
         String accHex = String.format("0x%03X", ACC & 0x0FFF);
-        return new String[]{pcHex, accHex};
+        return new String[] { pcHex, accHex };
     }
 
     public String getMemState() {
@@ -137,7 +134,6 @@ public class S12_IL {
         try {
             File file = new File(filename);
             file.createNewFile();
-
         } catch (IOException e) {
             System.err.println("writeMem ERR! Could not create file! " + e.getMessage());
             return false;
@@ -191,78 +187,85 @@ public class S12_IL {
             case 0b0000: {
                 opcodeStr = "JMP";
                 PC = x;
+                break;
             }
             case 0b0001: {
                 opcodeStr = "JN";
-                String ACCStr = Integer.toBinaryString(ACC);
-                if (ACCStr.charAt(ACCStr.length() - 12) == '1') {//Bit 12 is negative
+                if (ACC < 0) {
                     PC = x;
-                } else PC +=1;
+                } else {
+                    PC += 1;
+                }
+                break;
             }
             case 0b0010: {
                 opcodeStr = "JZ";
-                if(ACC == 0) {
+                if (ACC == 0) {
                     PC = x;
-                } else PC +=1;
+                } else {
+                    PC += 1;
+                }
+                break;
             }
             // Memory Access
             case 0b0100: {
                 opcodeStr = "LOAD";
-                ACC = mem[x];
-                PC+=1;
+                ACC = mem[byteToIndex(x)];
+                PC += 1;
+                break;
             }
             case 0b0101: {
                 opcodeStr = "STORE";
-                mem[x] = ACC;
-                PC+=1;
+                mem[byteToIndex(x)] = ACC;
+                PC += 1;
+                break;
             }
             case 0b0110: {
                 opcodeStr = "LOADI";
-                byte val = (byte) (ACC & 0xFF); //Get 8 bits from ACC
-                ACC = mem[val];
-                PC +=1;
+                byte val = (byte) (ACC & 0xFF); // Get 8 bits from ACC
+                ACC = mem[byteToIndex(val)];
+                PC += 1;
+                break;
             }
             case 0b0111: {
                 opcodeStr = "STOREI";
-                byte val = (byte) (ACC & 0xFF); //Get 8 bits from ACC
-                mem[val] = ACC;
-                PC +=1;
+                byte val = (byte) (ACC & 0xFF); // Get 8 bits from ACC
+                mem[byteToIndex(val)] = ACC;
+                PC += 1;
+                break;
             }
             // ALU
             case 0b1000: {
                 opcodeStr = "AND";
-                ACC = (short) (ACC & mem[x]);
-                PC+=1;
+                ACC = (short) (ACC & mem[byteToIndex(x)]);
+                PC += 1;
+                break;
             }
             case 0b1001: {
                 opcodeStr = "OR";
-                ACC = (short) (ACC | mem[x]);
-                PC+=1;
+                ACC = (short) (ACC | mem[byteToIndex(x)]);
+                PC += 1;
+                break;
             }
             case 0b1010: {
                 opcodeStr = "ADD";
-                ACC = (short) ((ACC + mem[x]) & 0xFFF);
-                PC+=1;
+                ACC = (short) ((ACC + mem[byteToIndex(x)]) & 0xFFF);
+                PC += 1;
+                break;
             }
             case 0b1011: {
                 opcodeStr = "SUB";
-                String valStr = Integer.toBinaryString(mem[x]);
-                String valTwosCompStr = "";
-                for (int i = 0; i < 12; i++) {
-                    if (valStr.charAt(valStr.length()-12+i) == 0) {
-                        valTwosCompStr+="1";
-                    } else valTwosCompStr+="0";
-                }
-                short valTwosComp = (short) Integer.parseInt(valTwosCompStr, 2);
-                ACC = (short) ((ACC + valTwosComp) & 0xFFF);
-                PC+=1;
+                ACC = (short) ((ACC - mem[byteToIndex(x)]) & 0xFFF);
+                PC += 1;
+                break;
             }
             // HALT
             case 0b1111: {
                 opcodeStr = "HALT";
                 isHalted = true;
+                break;
             }
-            default: {//Should never access! Will default with halt.
+            default: {// Should never access! Will default with halt.
                 opcodeStr = "HALT";
                 System.err.println("ERROR! Invalid instruction! Program will immediately halt.");
                 isHalted = true;
@@ -270,7 +273,14 @@ public class S12_IL {
         }
 
         // Return the trace
-        if(isHalted) return opcodeStr;
+        if (isHalted)
+            return opcodeStr;
         return opcodeStr + " " + x;
+    }
+
+    private static int byteToIndex(byte b) {
+        // Java's `byte` is signed, need to convert this into an unsigned index
+        // for memory access.
+        return b & 0xFF;
     }
 }

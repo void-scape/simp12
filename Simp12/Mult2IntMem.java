@@ -1,7 +1,11 @@
 package Simp12;
 
+import Simp12.InstrKind;
+
 public class Mult2IntMem {
     static Instr[] instrs = {
+            // JMP START
+            new Instr(InstrKind.JMP, 0x01),
             // START:
             // LOAD E2
             new Instr(InstrKind.LOAD, 0xE2),
@@ -10,11 +14,11 @@ public class Mult2IntMem {
             // STORE FF // result <- 0
             new Instr(InstrKind.STORE, 0xFF),
 
-            // 0x03 LOOP:
+            // 0x04 LOOP:
             // LOAD FE // A = multiplier
             new Instr(InstrKind.LOAD, 0xFE),
             // JZ DONE // if multiplier==0, its over
-            new Instr(InstrKind.JZ, 0x0C),
+            new Instr(InstrKind.JZ, 0x0D),
             //
             // LOAD FF // A = result
             new Instr(InstrKind.LOAD, 0xFF),
@@ -26,15 +30,15 @@ public class Mult2IntMem {
             // LOAD FE // A = multiplier
             new Instr(InstrKind.LOAD, 0xFE),
             // SUB E2 // A = multiplier - 1
-            new Instr(InstrKind.SUB, 0xE2),
+            new Instr(InstrKind.SUB, 0x00),
             // STORE FE // multiplier <- multiplier - 1
             new Instr(InstrKind.STORE, 0xFE),
             // JMP LOOP
-            new Instr(InstrKind.JMP, 0x03),
+            new Instr(InstrKind.JMP, 0x04),
 
-            // 0x0C DONE:
+            // 0x0D DONE:
             // HALT
-            new Instr(InstrKind.LOAD, 0xE2),
+            new Instr(InstrKind.HALT, 0),
     };
 
     /*
